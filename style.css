@@ -60,6 +60,12 @@ h1 {
     cursor: pointer;
 }
 
+.cell:focus-visible {
+    outline: 2px solid #007bff;
+    outline-offset: -2px;
+    z-index: 10;
+}
+
 /* Grid lines */
 .cell::before {
     content: '';
