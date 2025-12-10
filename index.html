@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Renju Game</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Renju</h1>
+        <div class="game-info">
+            <p id="status">Current Turn: Black</p>
+            <button id="restart-btn">Restart Game</button>
+        </div>
+        <div id="board" class="board"></div>
+        <div class="rules-info">
+            <h3>Rules (Black plays first)</h3>
+            <ul>
+                <li>Black wins with exactly 5 stones in a row.</li>
+                <li>White wins with 5 or more stones in a row.</li>
+                <li>Black Forbidden Moves:
+                    <ul>
+                        <li>Double Three (3-3)</li>
+                        <li>Double Four (4-4)</li>
+                        <li>Overline (6 or more stones)</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <script src="game.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
