@@ -1,0 +1,102 @@
+.App {
+  font-family: Arial, sans-serif;
+}
+
+.header {
+  background-color: #202020;
+  color: white;
+  padding: 10px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header a, .header span, .header button {
+  color: white;
+  text-decoration: none;
+  margin-left: 15px;
+}
+
+.logo {
+  font-weight: bold;
+  font-size: 1.5em;
+}
+
+main {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.video-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.video-card {
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.video-card:hover {
+  transform: scale(1.02);
+}
+
+.video-card a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.thumbnail-placeholder {
+  height: 140px;
+  background-color: #333;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2em;
+}
+
+.video-card h3 {
+  margin: 10px;
+  font-size: 1em;
+}
+
+.video-card p {
+  margin: 10px;
+  font-size: 0.8em;
+  color: #666;
+}
+
+.video-player-container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  max-width: 400px;
+  margin: 0 auto;
+  gap: 10px;
+}
+
+input, textarea, button {
+  padding: 10px;
+  font-size: 1em;
+}
+
+button {
+  background-color: #cc0000;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #aa0000;
+}
