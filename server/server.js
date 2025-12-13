@@ -5,6 +5,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const bcrypt = require('bcrypt');
+const crypto = require('crypto');
 const db = require('./db');
 
 const app = express();
@@ -40,6 +41,27 @@ const fileFilter = (req, file, cb) => {
 
 const upload = multer({ storage: storage, fileFilter: fileFilter });
 
+// Middleware for authentication
+const requireAuth = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) {
+        return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    db.get(`SELECT userId FROM sessions WHERE token = ?`, [token], (err, row) => {
+        if (err) {
+            return res.status(500).json({ error: 'Database error' });
+        }
+        if (!row) {
+            return res.status(401).json({ error: 'Invalid or expired token' });
+        }
+        req.user = { id: row.userId };
+        next();
+    });
+};
+
 // API Endpoints
 
 // Register
@@ -68,7 +90,11 @@ app.post('/api/login', (req, res) => {
         if (row) {
             const match = await bcrypt.compare(password, row.password);
             if (match) {
-                res.json({ id: row.id, username: row.username });
+                const token = crypto.randomBytes(32).toString('hex');
+                db.run(`INSERT INTO sessions (token, userId) VALUES (?, ?)`, [token, row.id], (err) => {
+                    if (err) return res.status(500).json({ error: err.message });
+                    res.json({ id: row.id, username: row.username, token });
+                });
             } else {
                 res.status(401).json({ error: 'Invalid credentials' });
             }
@@ -79,7 +105,7 @@ app.post('/api/login', (req, res) => {
 });
 
 // Upload Video
-app.post('/api/upload', (req, res) => {
+app.post('/api/upload', requireAuth, (req, res) => {
     upload.single('video')(req, res, function (err) {
         if (err instanceof multer.MulterError) {
             return res.status(500).json({ error: err.message });
@@ -87,7 +113,9 @@ app.post('/api/upload', (req, res) => {
             return res.status(500).json({ error: err.message });
         }
 
-        const { title, description, uploaderId, tags } = req.body;
+        const { title, description, tags } = req.body;
+        // uploaderId from body is ignored, use authenticated user
+        const uploaderId = req.user.id;
 
         if (!req.file) {
             return res.status(400).json({ error: 'No file uploaded' });
