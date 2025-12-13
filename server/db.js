@@ -36,6 +36,14 @@ const db = new sqlite3.Database(dbPath, (err) => {
         FOREIGN KEY(userId) REFERENCES users(id),
         FOREIGN KEY(videoId) REFERENCES videos(id)
       )`);
+
+      // Sessions table
+      db.run(`CREATE TABLE IF NOT EXISTS sessions (
+        token TEXT PRIMARY KEY,
+        userId INTEGER,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(userId) REFERENCES users(id)
+      )`);
     });
   }
 });
