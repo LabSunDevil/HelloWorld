@@ -156,11 +156,14 @@ const Upload = ({ user }) => {
     formData.append('title', title);
     formData.append('description', description);
     formData.append('tags', tags);
-    formData.append('uploaderId', user.id);
+    // uploaderId is now handled by the server via the auth token
 
     try {
       await axios.post(`${API_URL}/upload`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${user.token}`
+        }
       });
       alert('Upload successful!');
       navigate('/');
