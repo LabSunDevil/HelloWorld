@@ -1,0 +1,4 @@
+## 2024-05-23 - Second Order SQL Injection via Dynamic Typing
+**Vulnerability:** Second Order SQL Injection in `server/server.js`.
+**Learning:** SQLite's dynamic typing allows storing strings in `INTEGER` columns (like `videoId` in `views` table). The application relied on `videoId` being an integer when constructing a SQL query for recommendations: `... NOT IN (${watchedVideoIds.join(',')})`. An attacker could inject a malicious string (e.g., `0) UNION SELECT ... --`) into the `views` table via another endpoint, which would then be executed when the recommendations endpoint was called.
+**Prevention:** Always use parameterized queries (e.g., `NOT IN (?, ?, ?)`) even for data that is "expected" to be integers, especially when dealing with databases like SQLite that don't enforce strict typing. Validate input types strictly before insertion.
