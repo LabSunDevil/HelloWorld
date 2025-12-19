@@ -1,0 +1,4 @@
+## 2025-02-11 - Second-Order SQL Injection in Recommendations
+**Vulnerability:** A second-order SQL injection was found in the `/api/recommendations` endpoint. The application allowed malicious strings to be stored in the `views.videoId` column (which is an `INTEGER` column but SQLite allows dynamic typing). This stored value was then directly interpolated into a `NOT IN (...)` clause in a subsequent query.
+**Learning:** SQLite's dynamic typing system allows strings to be stored in INTEGER columns, meaning that database schema types cannot be relied upon for input validation. Even data retrieved from the database ("second-order") must be treated as untrusted if it originated from user input.
+**Prevention:** Always use parameterized queries (prepared statements), even for data retrieved from the database. For `IN` clauses with variable lists, dynamically generate placeholders (e.g., `?,?,?`) and pass the values as an array of parameters.
