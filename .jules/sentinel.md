@@ -1,0 +1,4 @@
+## 2024-05-22 - [Second-Order SQL Injection in SQLite]
+**Vulnerability:** Found a Second-Order SQL Injection in the recommendations endpoint. The `views` table could contain malicious strings in the `videoId` column because SQLite allows dynamic typing (storing strings in INTEGER columns). These strings were then concatenated directly into a `NOT IN (...)` clause in a subsequent query.
+**Learning:** SQLite's dynamic typing is a double-edged sword. Even if a column is defined as INTEGER, it can store arbitrary strings. Assuming data from the database is "safe" or of the correct type without validation is dangerous, especially with SQLite.
+**Prevention:** Always use parameterized queries, even for values retrieved from the database. Never concatenate strings into SQL queries. Verify data types before usage if strict typing is expected.
