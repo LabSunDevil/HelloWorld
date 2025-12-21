@@ -1,0 +1,6 @@
+## 2024-02-14 - [Second-Order SQL Injection via SQLite Dynamic Typing]
+**Vulnerability:** A Second-Order SQL Injection vulnerability was identified in the video recommendation logic. The application relied on stored `videoId`s from the `views` table to construct a `NOT IN (...)` clause using string concatenation. Because SQLite allows storing strings in `INTEGER` columns (Dynamic Typing), an attacker could insert a malicious payload (e.g., `'1) OR 1=1 --'`) into the `views` table via the unvalidated `/api/videos/:id/view` endpoint. When this payload was later retrieved and interpolated into the recommendation query, it altered the SQL logic to expose all videos.
+**Learning:** SQLite's flexible typing system can be a security footgun. Even if a column is defined as `INTEGER`, it can store arbitrary strings. Developers must valid input types strictly before insertion or always use parameterized queries, even for data coming "trusted" from the database.
+**Prevention:**
+1. Strict Input Validation: Ensure `req.params.id` is a valid integer before inserting.
+2. Parameterized Queries: Always use placeholders (`?`) for SQL queries, including dynamic `IN` clauses (by generating a string of `?, ?, ...` and passing the array of values).
