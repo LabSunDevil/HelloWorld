@@ -212,38 +212,56 @@ app.get('/api/recommendations', (req, res) => {
 
         // Get tags of last watched video
         db.get(`SELECT tags FROM videos WHERE id = ?`, [watchedVideoIds[0]], (err, video) => {
-             if (err || !video) {
-                 // Fallback
-                 db.all(`SELECT videos.*, users.username as uploaderName FROM videos LEFT JOIN users ON videos.uploaderId = users.id WHERE videos.id NOT IN (${watchedVideoIds.join(',')}) ORDER BY RANDOM() LIMIT 5`, [], (err, rows) => {
+             // Helper function for safe NOT IN clause
+             const getNotInClause = (ids) => {
+                 if (ids.length === 0) return { clause: '', params: [] };
+                 const placeholders = ids.map(() => '?').join(',');
+                 return {
+                     clause: `AND videos.id NOT IN (${placeholders})`,
+                     params: ids
+                 };
+             };
+
+             // Helper for fallback random videos
+             const fallbackRandom = (ids, limit, res) => {
+                 const notIn = getNotInClause(ids);
+                 const sql = `SELECT videos.*, users.username as uploaderName FROM videos LEFT JOIN users ON videos.uploaderId = users.id WHERE 1=1 ${notIn.clause} ORDER BY RANDOM() LIMIT ?`;
+                 db.all(sql, [...notIn.params, limit], (err, rows) => {
                      if(err) return res.status(500).json({error: err.message});
                      res.json(rows);
                  });
+             };
+
+             if (err || !video) {
+                 fallbackRandom(watchedVideoIds, 5, res);
                  return;
              }
 
              const tags = video.tags.split(',').map(t => t.trim());
              // Simple search for any of these tags
-             const placeholders = tags.map(() => `tags LIKE ?`).join(' OR ');
-             const params = tags.map(t => `%${t}%`);
+             const tagPlaceholders = tags.map(() => `tags LIKE ?`).join(' OR ');
+             const tagParams = tags.map(t => `%${t}%`);
 
              // exclude watched
-             const excludeClause = `AND id NOT IN (${watchedVideoIds.join(',')})`;
+             const notIn = getNotInClause(watchedVideoIds);
+             const excludeClause = notIn.clause;
 
-             const sql = `SELECT videos.*, users.username as uploaderName FROM videos LEFT JOIN users ON videos.uploaderId = users.id WHERE (${placeholders}) ${excludeClause} LIMIT 5`;
+             const sql = `SELECT videos.*, users.username as uploaderName FROM videos LEFT JOIN users ON videos.uploaderId = users.id WHERE (${tagPlaceholders}) ${excludeClause} LIMIT 5`;
 
-             db.all(sql, params, (err, recRows) => {
+             db.all(sql, [...tagParams, ...notIn.params], (err, recRows) => {
                  if (err) {
-                      // Fallback
-                     db.all(`SELECT videos.*, users.username as uploaderName FROM videos LEFT JOIN users ON videos.uploaderId = users.id WHERE videos.id NOT IN (${watchedVideoIds.join(',')}) ORDER BY RANDOM() LIMIT 5`, [], (err, rows) => {
-                         if(err) return res.status(500).json({error: err.message});
-                         res.json(rows);
-                     });
+                     // Fallback
+                     fallbackRandom(watchedVideoIds, 5, res);
                      return;
                  }
 
                  if (recRows.length < 5) {
                      // Fill with random videos if recommendations are not enough
-                      db.all(`SELECT videos.*, users.username as uploaderName FROM videos LEFT JOIN users ON videos.uploaderId = users.id WHERE videos.id NOT IN (${watchedVideoIds.join(',')}) ORDER BY RANDOM() LIMIT ?`, [5 - recRows.length], (err, randomRows) => {
+                     const limit = 5 - recRows.length;
+                     const notIn = getNotInClause(watchedVideoIds);
+                     const sql = `SELECT videos.*, users.username as uploaderName FROM videos LEFT JOIN users ON videos.uploaderId = users.id WHERE 1=1 ${notIn.clause} ORDER BY RANDOM() LIMIT ?`;
+
+                     db.all(sql, [...notIn.params, limit], (err, randomRows) => {
                          if(err) return res.status(500).json({error: err.message});
                          res.json([...recRows, ...randomRows]);
                      });
