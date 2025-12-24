@@ -1,0 +1,4 @@
+## 2024-12-24 - [Second-Order SQL Injection in Recommendations]
+**Vulnerability:** The `/api/recommendations` endpoint constructed a SQL query using string interpolation (`id NOT IN (${watchedVideoIds.join(',')})`). This allowed a second-order SQL injection where a malicious payload stored in the `views` table (via the `/api/videos/:id/view` endpoint, which lacked strict type validation for `id`) could alter the recommendation query logic.
+**Learning:** SQLite's dynamic typing system allows strings to be stored in INTEGER columns. Parameterized queries on `INSERT` alone are not enough if the data is later used in a dynamic SQL construction without re-parameterization.
+**Prevention:** Always use parameterized queries (placeholders like `?`) for ALL variable data, even if it comes from the database. Treat database content as potentially tainted if the insertion path had loose validation.
