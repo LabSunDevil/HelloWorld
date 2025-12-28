@@ -212,9 +212,11 @@ app.get('/api/recommendations', (req, res) => {
 
         // Get tags of last watched video
         db.get(`SELECT tags FROM videos WHERE id = ?`, [watchedVideoIds[0]], (err, video) => {
+             const excludePlaceholders = watchedVideoIds.map(() => '?').join(',');
+
              if (err || !video) {
                  // Fallback
-                 db.all(`SELECT videos.*, users.username as uploaderName FROM videos LEFT JOIN users ON videos.uploaderId = users.id WHERE videos.id NOT IN (${watchedVideoIds.join(',')}) ORDER BY RANDOM() LIMIT 5`, [], (err, rows) => {
+                 db.all(`SELECT videos.*, users.username as uploaderName FROM videos LEFT JOIN users ON videos.uploaderId = users.id WHERE videos.id NOT IN (${excludePlaceholders}) ORDER BY RANDOM() LIMIT 5`, watchedVideoIds, (err, rows) => {
                      if(err) return res.status(500).json({error: err.message});
                      res.json(rows);
                  });
@@ -227,14 +229,16 @@ app.get('/api/recommendations', (req, res) => {
              const params = tags.map(t => `%${t}%`);
 
              // exclude watched
-             const excludeClause = `AND id NOT IN (${watchedVideoIds.join(',')})`;
+             // excludePlaceholders is already defined above
+             const excludeClause = `AND id NOT IN (${excludePlaceholders})`;
 
              const sql = `SELECT videos.*, users.username as uploaderName FROM videos LEFT JOIN users ON videos.uploaderId = users.id WHERE (${placeholders}) ${excludeClause} LIMIT 5`;
+             const allParams = [...params, ...watchedVideoIds];
 
-             db.all(sql, params, (err, recRows) => {
+             db.all(sql, allParams, (err, recRows) => {
                  if (err) {
                       // Fallback
-                     db.all(`SELECT videos.*, users.username as uploaderName FROM videos LEFT JOIN users ON videos.uploaderId = users.id WHERE videos.id NOT IN (${watchedVideoIds.join(',')}) ORDER BY RANDOM() LIMIT 5`, [], (err, rows) => {
+                     db.all(`SELECT videos.*, users.username as uploaderName FROM videos LEFT JOIN users ON videos.uploaderId = users.id WHERE videos.id NOT IN (${excludePlaceholders}) ORDER BY RANDOM() LIMIT 5`, watchedVideoIds, (err, rows) => {
                          if(err) return res.status(500).json({error: err.message});
                          res.json(rows);
                      });
@@ -243,7 +247,7 @@ app.get('/api/recommendations', (req, res) => {
 
                  if (recRows.length < 5) {
                      // Fill with random videos if recommendations are not enough
-                      db.all(`SELECT videos.*, users.username as uploaderName FROM videos LEFT JOIN users ON videos.uploaderId = users.id WHERE videos.id NOT IN (${watchedVideoIds.join(',')}) ORDER BY RANDOM() LIMIT ?`, [5 - recRows.length], (err, randomRows) => {
+                      db.all(`SELECT videos.*, users.username as uploaderName FROM videos LEFT JOIN users ON videos.uploaderId = users.id WHERE videos.id NOT IN (${excludePlaceholders}) ORDER BY RANDOM() LIMIT ?`, [...watchedVideoIds, 5 - recRows.length], (err, randomRows) => {
                          if(err) return res.status(500).json({error: err.message});
                          res.json([...recRows, ...randomRows]);
                      });
