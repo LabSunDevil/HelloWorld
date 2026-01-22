@@ -213,8 +213,9 @@ app.get('/api/recommendations', (req, res) => {
         // Get tags of last watched video
         db.get(`SELECT tags FROM videos WHERE id = ?`, [watchedVideoIds[0]], (err, video) => {
              if (err || !video) {
+                 const excludePlaceholders = watchedVideoIds.map(() => '?').join(',');
                  // Fallback
-                 db.all(`SELECT videos.*, users.username as uploaderName FROM videos LEFT JOIN users ON videos.uploaderId = users.id WHERE videos.id NOT IN (${watchedVideoIds.join(',')}) ORDER BY RANDOM() LIMIT 5`, [], (err, rows) => {
+                 db.all(`SELECT videos.*, users.username as uploaderName FROM videos LEFT JOIN users ON videos.uploaderId = users.id WHERE videos.id NOT IN (${excludePlaceholders}) ORDER BY RANDOM() LIMIT 5`, watchedVideoIds, (err, rows) => {
                      if(err) return res.status(500).json({error: err.message});
                      res.json(rows);
                  });
@@ -227,14 +228,15 @@ app.get('/api/recommendations', (req, res) => {
              const params = tags.map(t => `%${t}%`);
 
              // exclude watched
-             const excludeClause = `AND id NOT IN (${watchedVideoIds.join(',')})`;
+             const excludePlaceholders = watchedVideoIds.map(() => '?').join(',');
+             const excludeClause = `AND id NOT IN (${excludePlaceholders})`;
 
              const sql = `SELECT videos.*, users.username as uploaderName FROM videos LEFT JOIN users ON videos.uploaderId = users.id WHERE (${placeholders}) ${excludeClause} LIMIT 5`;
 
-             db.all(sql, params, (err, recRows) => {
+             db.all(sql, [...params, ...watchedVideoIds], (err, recRows) => {
                  if (err) {
                       // Fallback
-                     db.all(`SELECT videos.*, users.username as uploaderName FROM videos LEFT JOIN users ON videos.uploaderId = users.id WHERE videos.id NOT IN (${watchedVideoIds.join(',')}) ORDER BY RANDOM() LIMIT 5`, [], (err, rows) => {
+                     db.all(`SELECT videos.*, users.username as uploaderName FROM videos LEFT JOIN users ON videos.uploaderId = users.id WHERE videos.id NOT IN (${excludePlaceholders}) ORDER BY RANDOM() LIMIT 5`, watchedVideoIds, (err, rows) => {
                          if(err) return res.status(500).json({error: err.message});
                          res.json(rows);
                      });
