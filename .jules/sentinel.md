@@ -1,0 +1,4 @@
+## 2024-05-23 - Second Order SQL Injection via SQLite Type Affinity
+**Vulnerability:** A Second Order SQL Injection vulnerability was found in the recommendation engine. Malicious strings could be inserted into the `views` table's `videoId` column because SQLite allows storing TEXT in INTEGER columns (Type Affinity). These strings were later retrieved and dangerously interpolated into a `NOT IN (...)` SQL clause in a subsequent query.
+**Learning:** SQLite's dynamic typing means declaring a column as `INTEGER` does not enforce integer-only storage. Validating input at the API boundary is crucial, but relying solely on database types for safety is insufficient in SQLite.
+**Prevention:** Always use parameterized queries, even for arrays/lists (e.g., generating `?, ?, ?` placeholders). Enforce strict input validation (e.g., regex checks) on all ID parameters before they reach the database layer.
